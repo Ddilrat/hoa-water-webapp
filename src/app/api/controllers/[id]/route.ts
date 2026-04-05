@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 // PUT update a controller
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
@@ -7,7 +8,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const body = await request.json();
     const { name, device_id, api_key, is_active } = body;
 
-    // Only update api_key if a new one was provided
     const query = api_key
       ? 'UPDATE controllers SET name = ?, device_id = ?, api_key = ?, is_active = ? WHERE id = ?'
       : 'UPDATE controllers SET name = ?, device_id = ?, is_active = ? WHERE id = ?';
@@ -21,12 +21,13 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Controller not found' }, { status: 404 });
     }
 
+    await logger.info('controllers', `Controller updated: ${name}`, { id: params.id, is_active });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     if (error.code === 'ER_DUP_ENTRY') {
       return NextResponse.json({ error: 'A controller with that device_id already exists' }, { status: 409 });
     }
-    console.error('PUT /api/controllers/[id] error:', error);
+    await logger.error('controllers', `Failed to update controller id=${params.id}`, { error: error.message });
     return NextResponse.json({ error: 'Failed to update controller' }, { status: 500 });
   }
 }
@@ -43,9 +44,10 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Controller not found' }, { status: 404 });
     }
 
+    await logger.info('controllers', `Controller deleted id=${params.id}`);
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('DELETE /api/controllers/[id] error:', error);
+  } catch (error: any) {
+    await logger.error('controllers', `Failed to delete controller id=${params.id}`, { error: error.message });
     return NextResponse.json({ error: 'Failed to delete controller' }, { status: 500 });
   }
 }

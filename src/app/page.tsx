@@ -21,6 +21,14 @@ export default function Home() {
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Zone Events</h2>
             <p className="text-gray-500 text-sm">View watering history and fetch new data from Rachio</p>
           </a>
+
+          <a
+            href="/logs"
+            className="block bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-400 hover:shadow-md transition-all"
+          >
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Application Logs</h2>
+            <p className="text-gray-500 text-sm">View API activity, fetch history, and errors</p>
+          </a>
         </div>
       </div>
     </main>
