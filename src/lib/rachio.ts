@@ -1,3 +1,34 @@
+export interface RachioZone {
+  rachio_zone_id: string;
+  zone_number: number;
+  zone_name: string;
+  enabled: boolean;
+}
+
+export async function getDeviceZones(apiKey: string, deviceId: string): Promise<RachioZone[]> {
+  const url = `https://api.rach.io/1/public/device/${deviceId}`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Rachio API error: ${response.status} ${response.statusText}`);
+  }
+
+  const device = await response.json();
+  const zones: any[] = device.zones ?? [];
+
+  return zones.map((z) => ({
+    rachio_zone_id: z.id,
+    zone_number: z.zoneNumber,
+    zone_name: z.name,
+    enabled: z.enabled ?? true,
+  }));
+}
+
 const RACHIO_MAX_DAYS = 35;
 const MAX_TIME_RANGE_MS = RACHIO_MAX_DAYS * 24 * 60 * 60 * 1000;
 
