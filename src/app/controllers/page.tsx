@@ -18,6 +18,24 @@ interface FormState {
   is_active: boolean;
 }
 
+interface Schedule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  type: string | null;
+  summary: string | null;
+  total_duration: string | null;
+  cycle_soak: boolean;
+  cycle_soak_status: string | null;
+  cycle_minutes: number | null;
+  soak_minutes: number | null;
+  cycle_count: number | null;
+  et_skip: boolean;
+  start_date: string | null;
+  operator: string | null;
+  zones: { zone_name: string; duration: string | null }[];
+}
+
 const emptyForm: FormState = { name: '', device_id: '', api_key: '', is_active: true };
 
 export default function ControllersPage() {
@@ -28,6 +46,11 @@ export default function ControllersPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
+
+  // Schedules
+  const [schedulesById, setSchedulesById] = useState<Record<number, Schedule[]>>({});
+  const [loadingSchedules, setLoadingSchedules] = useState<Record<number, boolean>>({});
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   async function loadControllers() {
     setLoading(true);
@@ -44,6 +67,28 @@ export default function ControllersPage() {
   }
 
   useEffect(() => { loadControllers(); }, []);
+
+  async function toggleSchedules(id: number) {
+    if (expandedId === id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(id);
+    if (schedulesById[id]) return; // already loaded
+
+    setLoadingSchedules((prev) => ({ ...prev, [id]: true }));
+    try {
+      const res = await fetch(`/api/controllers/${id}/schedules`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch schedules');
+      setSchedulesById((prev) => ({ ...prev, [id]: data }));
+    } catch (e: any) {
+      setSchedulesById((prev) => ({ ...prev, [id]: [] }));
+      setError(e.message);
+    } finally {
+      setLoadingSchedules((prev) => ({ ...prev, [id]: false }));
+    }
+  }
 
   function startAdd() {
     setEditingId(null);
@@ -79,7 +124,6 @@ export default function ControllersPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(form),
           });
-
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Save failed');
@@ -114,19 +158,14 @@ export default function ControllersPage() {
             <h1 className="text-3xl font-bold text-gray-900">Controllers</h1>
           </div>
           {!showForm && (
-            <button
-              onClick={startAdd}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
+            <button onClick={startAdd} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
               + Add Controller
             </button>
           )}
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6">
-            {error}
-          </div>
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6">{error}</div>
         )}
 
         {showForm && (
@@ -137,64 +176,39 @@ export default function ControllersPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input
-                  type="text"
-                  required
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="e.g. Front Yard"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Device ID</label>
-                <input
-                  type="text"
-                  required
-                  value={form.device_id}
-                  onChange={(e) => setForm({ ...form, device_id: e.target.value })}
+                <input type="text" required value={form.device_id} onChange={(e) => setForm({ ...form, device_id: e.target.value })}
                   placeholder="Rachio device ID"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   API Key {editingId && <span className="text-gray-400 font-normal">(leave blank to keep existing)</span>}
                 </label>
-                <input
-                  type="password"
-                  required={!editingId}
-                  value={form.api_key}
+                <input type="password" required={!editingId} value={form.api_key}
                   onChange={(e) => setForm({ ...form, api_key: e.target.value })}
                   placeholder="Rachio API key"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               {editingId && (
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="is_active"
-                    checked={form.is_active}
-                    onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                    className="rounded"
-                  />
+                  <input type="checkbox" id="is_active" checked={form.is_active}
+                    onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="rounded" />
                   <label htmlFor="is_active" className="text-sm text-gray-700">Active</label>
                 </div>
               )}
               <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm"
-                >
+                <button type="submit" disabled={saving}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm">
                   {saving ? 'Saving...' : 'Save'}
                 </button>
-                <button
-                  type="button"
-                  onClick={cancelForm}
-                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-                >
+                <button type="button" onClick={cancelForm}
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm">
                   Cancel
                 </button>
               </div>
@@ -211,35 +225,103 @@ export default function ControllersPage() {
         ) : (
           <div className="space-y-3">
             {controllers.map((c) => (
-              <div
-                key={c.id}
-                className="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">{c.name}</span>
-                    {c.is_active ? (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
+              <div key={c.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="p-5 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-900">{c.name}</span>
+                      {c.is_active ? (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
+                      ) : (
+                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Inactive</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-400 mt-0.5 font-mono">{c.device_id}</p>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <button
+                      onClick={() => toggleSchedules(c.id)}
+                      className="text-sm text-purple-600 hover:underline px-2"
+                    >
+                      {loadingSchedules[c.id] ? 'Loading...' : expandedId === c.id ? 'Hide Schedules' : 'View Schedules'}
+                    </button>
+                    <button onClick={() => startEdit(c)} className="text-sm text-blue-600 hover:underline px-2">Edit</button>
+                    <button onClick={() => handleDelete(c.id, c.name)} className="text-sm text-red-500 hover:underline px-2">Delete</button>
+                  </div>
+                </div>
+
+                {/* Schedules panel */}
+                {expandedId === c.id && (
+                  <div className="border-t border-gray-100 bg-gray-50 p-5">
+                    {loadingSchedules[c.id] ? (
+                      <p className="text-sm text-gray-400">Loading schedules...</p>
+                    ) : !schedulesById[c.id] || schedulesById[c.id].length === 0 ? (
+                      <p className="text-sm text-gray-400">No schedules found for this controller.</p>
                     ) : (
-                      <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Inactive</span>
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-semibold text-gray-700">Schedules ({schedulesById[c.id].length})</h3>
+                        {schedulesById[c.id].map((s) => (
+                          <div key={s.id} className="bg-white rounded-lg border border-gray-200 p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-900 text-sm">{s.name}</span>
+                                {s.enabled ? (
+                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Enabled</span>
+                                ) : (
+                                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Disabled</span>
+                                )}
+                              </div>
+                              {s.total_duration && (
+                                <span className="text-xs text-gray-500">{s.total_duration} total</span>
+                              )}
+                            </div>
+                            {s.summary && (
+                              <p className="text-xs text-gray-500 mb-2">{s.summary}</p>
+                            )}
+
+                            {/* Settings badges */}
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                              {s.start_date && (
+                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                  Start: {s.start_date}
+                                </span>
+                              )}
+                              <span className={`text-xs px-2 py-0.5 rounded ${s.cycle_soak ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                                {s.cycle_soak
+                                  ? s.cycle_minutes && s.soak_minutes
+                                    ? `Cycle & Soak: ${s.cycle_minutes}m cycle / ${s.soak_minutes}m soak${s.cycle_count ? ` × ${s.cycle_count}` : ''}`
+                                    : 'Cycle & Soak: ON (auto)'
+                                  : 'Cycle & Soak: OFF'}
+                              </span>
+                              <span className={`text-xs px-2 py-0.5 rounded ${s.et_skip ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                                Weather Skip: {s.et_skip ? 'ON' : 'OFF'}
+                              </span>
+                              {s.operator && (
+                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                  {s.operator === 'AFTER' ? 'Ends after sunrise' :
+                                   s.operator === 'BEFORE' ? 'Ends before sunrise' :
+                                   s.operator === 'AFTER_SUNSET' ? 'Starts after sunset' :
+                                   s.operator === 'BEFORE_SUNSET' ? 'Starts before sunset' :
+                                   s.operator}
+                                </span>
+                              )}
+                            </div>
+
+                            {s.zones.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {s.zones.map((z, i) => (
+                                  <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                                    {z.zone_name}{z.duration ? ` — ${z.duration}` : ''}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  <p className="text-sm text-gray-400 mt-0.5 font-mono">{c.device_id}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => startEdit(c)}
-                    className="text-sm text-blue-600 hover:underline px-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(c.id, c.name)}
-                    className="text-sm text-red-500 hover:underline px-2"
-                  >
-                    Delete
-                  </button>
-                </div>
+                )}
               </div>
             ))}
           </div>
