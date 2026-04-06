@@ -23,11 +23,19 @@ export default function Home() {
           </a>
 
           <a
-            href="/logs"
+            href="/zones"
             className="block bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-400 hover:shadow-md transition-all"
           >
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Application Logs</h2>
-            <p className="text-gray-500 text-sm">View API activity, fetch history, and errors</p>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Zones</h2>
+            <p className="text-gray-500 text-sm">View and manage zone flow rates synced from Rachio</p>
+          </a>
+
+          <a
+            href="/admin"
+            className="block bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-400 hover:shadow-md transition-all"
+          >
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Administration</h2>
+            <p className="text-gray-500 text-sm">Sync zones from Rachio and other admin tasks</p>
           </a>
         </div>
       </div>
