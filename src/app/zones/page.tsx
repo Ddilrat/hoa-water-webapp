@@ -158,7 +158,7 @@ export default function ZonesPage() {
           <p className="text-gray-500">Loading...</p>
         ) : zones.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400">
-            No zones found. Click "Sync from Rachio" to import zone data.
+            No zones found. Click &quot;Sync from Rachio&quot; to import zone data.
           </div>
         ) : (
           <div className="space-y-6">
