@@ -1,3 +1,5 @@
+'use client';
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50 p-8">
@@ -6,34 +8,22 @@ export default function Home() {
         <p className="text-gray-500 mb-8">Rachio irrigation monitoring</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <a
-            href="/controllers"
-            className="block bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-400 hover:shadow-md transition-all"
-          >
+          <a href="/controllers" className="block bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-400 hover:shadow-md transition-all">
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Controllers</h2>
             <p className="text-gray-500 text-sm">Manage your Rachio controllers and API keys</p>
           </a>
 
-          <a
-            href="/events"
-            className="block bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-400 hover:shadow-md transition-all"
-          >
+          <a href="/events" className="block bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-400 hover:shadow-md transition-all">
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Zone Events</h2>
             <p className="text-gray-500 text-sm">View watering history and fetch new data from Rachio</p>
           </a>
 
-          <a
-            href="/zones"
-            className="block bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-400 hover:shadow-md transition-all"
-          >
+          <a href="/zones" className="block bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-400 hover:shadow-md transition-all">
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Zones</h2>
             <p className="text-gray-500 text-sm">View and manage zone flow rates synced from Rachio</p>
           </a>
 
-          <a
-            href="/admin"
-            className="block bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-400 hover:shadow-md transition-all"
-          >
+          <a href="/admin" className="block bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-400 hover:shadow-md transition-all">
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Administration</h2>
             <p className="text-gray-500 text-sm">Sync zones from Rachio and other admin tasks</p>
           </a>
